@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# Script to execute BASH scripts from scripts.programster.org
+# This will download the script before doing a hash check and
+# prompting the user to review the file before they execute it.
+
+# Usage 
+# Executing the command below will execute the first revision of script with ID 1 
+# as long as it has the sha256 of 209cd...
+# prog-exec "1/1" "23fc5e6d9e13fc267aabd29b06f805e6e93d453923586fc75e590dc178d4f49f"
+
+# Check running bash.
+if ! [ -n "$BASH_VERSION" ];then
+    echo "this is not bash, calling self with bash....";
+    SCRIPT=$(readlink -f "$0")
+    /bin/bash $SCRIPT
+    exit;
+fi
+
+# Check that the user provided the correct number of arguments.
+EXPECTED_NUM_ARGS=2;
+if [ "$#" -ne $EXPECTED_NUM_ARGS ]; then
+    echo "Expecting 2 arguments, the script identities, and the sha256"
+    exit 1
+fi
+
+
+# Put the url together from the first argument.
+URL="https://scripts.programster.org/scripts/`echo $1`?output=raw"
+
+# Create a temporary file to stick the script in
+TMPFILE=$(mktemp /tmp/script.XXXXXX)
+
+# Download the script
+wget $URL -O "$TMPFILE"
+
+# Get the hash of the script which we will check against the provided hash
+# We use cut to just get the first word which is the hash, and not include the file
+# name
+HASH=`sha256sum $TMPFILE | cut -d " " -f1`
+
+if [ $HASH = $2 ]; then
+    echo "Hash check: SUCCESS"
+    echo "This would be a good time to review the script at: "
+    echo "$TMPFILE"
+    echo ""
+    read -p "Do you wish to proceed with executing the file? " -n 1 -r
+    echo    # (optional) move to a new line
+
+    if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+        # User chose to execute the file.
+        echo "Starting script execution..."
+        /bin/bash $TMPFILE
+        echo "Script completed."
+    else
+        # User chose to cancel.
+        echo "Cancelling execution."
+        exit 0
+    fi
+else
+    # hashes didnt match. Alert user and exit.
+    echo "Hash check: ERRROR!"
+    echo "$HASH != $2"
+    echo "Please check your hash is correct"
+    exit 1
+fi
