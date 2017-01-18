@@ -32,7 +32,7 @@ URL="https://scripts.programster.org/scripts/`echo $1`?output=raw"
 TMPFILE=$(mktemp /tmp/script.XXXXXX)
 
 # Download the script
-wget $URL -O "$TMPFILE"
+wget $URL -q -O "$TMPFILE"
 
 # Get the hash of the script which we will check against the provided hash
 # We use cut to just get the first word which is the hash, and not include the file
