@@ -51,7 +51,8 @@ if [ $HASH = $2 ]; then
     then
         # User chose to execute the file.
         echo "Starting script execution..."
-        /bin/bash $TMPFILE
+        chmod +x $TMPFILE
+        $TMPFILE
         echo "Script completed."
     else
         # User chose to cancel.
